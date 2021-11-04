@@ -16,6 +16,13 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 # -- Project information -----------------------------------------------------
+import os
+import sys
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+
+here = os.path.dirname(__file__)
+sys.path.insert(0, os.path.abspath(os.path.join(here, '..')))
+
 
 project = u"pyts"
 copyright = u"2021, Xiaobo Sun"
@@ -37,14 +44,11 @@ needs_sphinx = '2.1'
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.coverage",
-    "sphinx.ext.doctest",
     "sphinx.ext.intersphinx",
     "sphinx.ext.mathjax",
-    "sphinx.ext.napoleon",
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
-    "autoapi.extension",
+    'sphinx.ext.githubpages'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -55,12 +59,23 @@ templates_path = ["_templates"]
 # This patterns also effect to html_static_path and html_extra_path
 exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
-# If true, `todo` and `todoList` produce output, else they produce nothing.
-todo_include_todos = False
+
+source_suffix = ['.rst', '.md']
+#source_suffix = '.rst'
+
+# The master toctree document.
+master_doc = 'index'
+
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',  # needs 'show_related': True theme option to display
+        'searchbox.html',
+    ]
+}
 
 # -- Use autoapi.extension to run sphinx-apidoc -------
-
-autoapi_dirs = ['../pyts']
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -77,11 +92,6 @@ html_theme = "sphinx_rtd_theme"
 
 # -- Options for Intersphinx
 
-intersphinx_mapping = {'python': ('https://docs.python.org/3', None),
-                       # Commonly used libraries, uncomment when used in package
-                       # 'numpy': ('http://docs.scipy.org/doc/numpy/', None),
-                       # 'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
-                       # 'scikit-learn': ('https://scikit-learn.org/stable/', None),
-                       # 'matplotlib': ('https://matplotlib.org/stable/', None),
-                       # 'pandas': ('http://pandas.pydata.org/docs/', None),
-                       }
+# Grouping the document tree into LaTeX files. List of tuples
+# (source start file, target name, title,
+#  author, documentclass [howto, manual, or own class]).
