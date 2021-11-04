@@ -1,6 +1,6 @@
 from tensorflow.keras.utils import get_custom_objects
 
-from tfn.layers.utils import shifted_softplus, tfn_mae
+from pyts.layers.utils import shifted_softplus, tfn_mae
 
 from .atomic_images import (
     OneHot,
