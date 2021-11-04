@@ -25,6 +25,7 @@ def get_data_loader(
     :return: DataLoader object specified by `loader_type`
     """
     if loader_type == "ts_loader":
+        return TSLoader(**kwargs)
     else:
         raise ValueError(
             "arg `loader_type` had value: {} which is not supported. "

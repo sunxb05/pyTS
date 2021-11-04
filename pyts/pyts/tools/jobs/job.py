@@ -8,8 +8,8 @@ from sacred import Experiment
 from sacred.observers import FileStorageObserver, MongoObserver, RunObserver
 from tensorflow.keras.models import Model
 
-from tfn.tools.ingredients import builder_ingredient, data_ingredient
-from tfn.tools.jobs import config_defaults as cd
+from pyts.tools.ingredients import builder_ingredient, data_ingredient
+from pyts.tools.jobs import config_defaults as cd
 
 
 class Job(metaclass=ABCMeta):

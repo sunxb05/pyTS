@@ -3,7 +3,7 @@ import time
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Add, Input, Lambda
-from tfn.layers import (
+from pyts.layers import (
     DenseRadialFactory,
     MolecularConvolution,
     Preprocessing,

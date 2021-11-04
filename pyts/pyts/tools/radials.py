@@ -2,7 +2,7 @@ import json
 
 import tensorflow as tf
 from tensorflow.keras.models import model_from_json
-from tfn.layers import DenseRadialFactory
+from pyts.layers import DenseRadialFactory
 
 
 def get_radial_factory(identifier="multi_dense", radial_kwargs: dict = None):

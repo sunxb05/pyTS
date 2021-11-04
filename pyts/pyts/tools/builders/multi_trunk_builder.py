@@ -1,8 +1,8 @@
 import tensorflow as tf
 from tensorflow.python.keras.layers import Lambda
 
-from tfn.layers import MolecularConvolution, MolecularSelfInteraction, SelfInteraction
-from tfn.tools.builders import Builder
+from pyts.layers import MolecularConvolution, MolecularSelfInteraction, SelfInteraction
+from pyts.tools.builders import Builder
 
 
 class DualTrunkBuilder(Builder):

@@ -1,7 +1,7 @@
 from h5py import File
 import numpy as np
 
-from tfn.layers.atomic_images import OneHot
+from pyts.layers.atomic_images import OneHot
 
 from ...layers.utility_layers import MaskedDistanceMatrix
 from . import DataLoader
