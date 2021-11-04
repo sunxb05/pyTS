@@ -72,7 +72,7 @@ class TSLoader(DataLoader):
         # Load Data
         with File(self.path, "r") as dataset:
             atomic_nums = self.pad_along_axis(
-                np.asarray(dataset["ts/atomic_numbers"], dtype="int"), self.num_points
+                np.asarray(dataset["point_11/atomic_numbers"], dtype="int"), self.num_points
             )
             cartesians = {
                 structure_type: self.pad_along_axis(
@@ -80,11 +80,17 @@ class TSLoader(DataLoader):
                     self.num_points,
                 )
                 for structure_type in (
-                    "ts",
-                    "reactant",
-                    "reactant_complex",
-                    "product_complex",
-                    "product",
+                    "point_1",
+                    "point_2",
+                    "point_3",
+                    "point_4",
+                    "point_5",
+                    "point_6",
+                    "point_7",
+                    "point_8",
+                    "point_9",
+                    "point_10",
+                    "point_11",
                 )
             }
             # energies = {
@@ -142,23 +148,33 @@ class TSLoader(DataLoader):
             length = len(atomic_nums)
             x = [
                 atomic_nums,
-                cartesians["reactant_complex"]
-                if kwargs.get("use_complexes", False)
-                else cartesians["reactant"],
-                cartesians["product_complex"]
-                if kwargs.get("use_complexes", False)
-                else cartesians["product"],
+                cartesians["point_1"],
+                # cartesians["reactant_complex"]
+                # if kwargs.get("use_complexes", False)
+                # else cartesians["reactant"],
+                # cartesians["product_complex"]
+                # if kwargs.get("use_complexes", False)
+                # else cartesians["product"],
             ]
             y = [
-                np.triu(
-                    MaskedDistanceMatrix()(
-                        [OneHot(self.max_z)(atomic_nums), cartesians["ts"]]
-                    )
-                )
-                if kwargs.get("output_distance_matrix", False)
-                else cartesians["ts"]
-                # else cartesians["ts"],
+                # np.triu(
+                #     MaskedDistanceMatrix()(
+                #         [OneHot(self.max_z)(atomic_nums), cartesians["point_11"]]
+                #     )
+                # )
+                # if kwargs.get("output_distance_matrix", False)
+                # else cartesians["ts"]
                 # energies["ts"],
+                cartesians["point_2"],
+                cartesians["point_3"],
+                cartesians["point_4"],
+                cartesians["point_5"],
+                cartesians["point_6"],
+                cartesians["point_7"],
+                cartesians["point_8"],
+                cartesians["point_9"],
+                cartesians["point_10"],
+                cartesians["point_11"]
             ]
             if output_type == "energies":
                 y.pop(0)

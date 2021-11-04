@@ -8,6 +8,7 @@ from tensorflow.keras.callbacks import Callback
 from tensorflow.keras.models import Model
 from tensorflow.keras.metrics import categorical_accuracy
 from tensorflow.keras.losses import get as get_loss
+from tensorflow.keras import backend as K
 
 from .converters import ndarrays_to_xyz
 from ..layers import MaskedDistanceMatrix, OneHot
@@ -97,15 +98,33 @@ class CartesianMetrics(Callback):
             [ts_cartesians].
         :return: i, z, r, p, ts_true, ts_pred
         """
-        predicted_transition_states = self._get_prediction(data[0])
-        ((atomic_nums, reactants, products), (true_transition_states,),) = data
+        predict_point2, predict_point3, predict_point4, predict_point5, predict_point6, predict_point7, predict_point8, predict_point9, predict_point10, predict_point11 = self._get_prediction(data[0])
+        ((atomic_nums, point1), (point2, point3, point4, point5, point6, point7, point8, point9, point10, point11),) = data
         for i, structures in enumerate(
             zip(
                 atomic_nums[: self.max_structures],
-                reactants[: self.max_structures],
-                products[: self.max_structures],
-                true_transition_states[: self.max_structures],
-                predicted_transition_states[: self.max_structures],
+                point1[: self.max_structures],
+                point2[: self.max_structures],
+                point3[: self.max_structures],
+                point4[: self.max_structures],
+                point5[: self.max_structures],
+                point6[: self.max_structures],
+                point7[: self.max_structures],
+                point8[: self.max_structures],
+                point9[: self.max_structures],
+                point10[: self.max_structures],
+                point11[: self.max_structures],
+
+                predict_point2[: self.max_structures],
+                predict_point3[: self.max_structures],
+                predict_point4[: self.max_structures],
+                predict_point5[: self.max_structures],
+                predict_point6[: self.max_structures],
+                predict_point7[: self.max_structures],
+                predict_point8[: self.max_structures],
+                predict_point9[: self.max_structures],
+                predict_point10[: self.max_structures],
+                predict_point11[: self.max_structures],
             )
         ):
             output = [np.expand_dims(a, 0) for a in structures]
@@ -116,40 +135,58 @@ class CartesianMetrics(Callback):
         if a.shape != b.shape:
             return 0
         else:
-            return np.mean(get_loss(self.model.loss)(a, b))
+            return K.mean(get_loss(self.model.loss)(a, b))
 
     @staticmethod
     def structure_loss(z, y_pred, y_true):
         d = MaskedDistanceMatrix()
         one_hot = OneHot(np.max(z) + 1)(z)
-        dist_matrix = np.abs(d([one_hot, y_pred]) - d([one_hot, y_true]))
-        dist_matrix = np.triu(dist_matrix)
+        dist_matrix = K.abs(d([one_hot, y_pred]) - d([one_hot, y_true]))
+        dist_matrix = K.triu(dist_matrix)
         return (
-            float(np.mean(dist_matrix[dist_matrix != 0])),
+            float(K.mean(dist_matrix[dist_matrix != 0])),
             float(np.mean(np.sum(np.sum(dist_matrix, axis=-1), axis=-1), axis=0)),
         )
 
     def write_cartesians(
         self, data: list, path: Path, write_static_structures: bool = False
     ):
-        for i, z, r, p, true, pred in self._unwrap_data_lazily(data):
+        for i, z, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p2_, p3_ , p4_, p5_, p6_, p7_, p8_, p9_, p10_, p11_ in self._unwrap_data_lazily(data):
             # Make .xyz message lines
             arrays = (
-                {"reactant": r, "product": p, "true": true, "predicted": pred}
-                if write_static_structures
-                else {"predicted": pred}
+                {"point1": p1, "point2": p2, "point3": p3, "point4": p4, "point5": p5, "point6": p6, "point7": p7, "point8": p8, "point9": p9, "point10": p10, "point11": p11,"predicted_p2": p2_, "predicted_p3": p3_, "predicted_p4": p4_, "predicted_p5": p5_,"predicted_p6": p6_, "predicted_p7": p7_, "predicted_p8": p8_, "predicted_p9": p9_, "predicted_p10": p10_,"predicted_p11": p11_}
             )
-            for name, array in arrays.items():
-                loss = self.loss(array, true)
-                error = self.structure_loss(z, array, true)[0] if name != "true" else 0
-                message = f"loss: {loss} " f"-- distance_error: {error} "
-                ndarrays_to_xyz(array[0], z[0], path / f"{i}_{name}.xyz", message)
 
+            loss_p2 = self.loss(arrays["point2"], arrays["predicted_p2"])
+            loss_p3 = self.loss(arrays["point3"], arrays["predicted_p3"])
+            loss_p4 = self.loss(arrays["point4"], arrays["predicted_p4"])
+            loss_p5 = self.loss(arrays["point5"], arrays["predicted_p5"])
+            loss_p6 = self.loss(arrays["point6"], arrays["predicted_p6"])
+            loss_p7 = self.loss(arrays["point7"], arrays["predicted_p7"])
+            loss_p8 = self.loss(arrays["point8"], arrays["predicted_p8"])
+            loss_p9 = self.loss(arrays["point9"], arrays["predicted_p9"])
+            loss_p10 = self.loss(arrays["point10"], arrays["predicted_p10"])
+            loss_p11 = self.loss(arrays["point11"], arrays["predicted_p11"])
+            # error_p2 = self.structure_loss(z, array["point2"], array["predicted_p2"])[0]
+            # error_p3 = self.structure_loss(z, array["point3"], array["predicted_p3"])[0]
+            # message_p2 = f"loss: {loss_p2} " f"-- distance_error: {error_p2} "
+            # message_p3 = f"loss: {loss_p3} " f"-- distance_error: {error_p3} "
+
+            ndarrays_to_xyz(arrays["predicted_p2"][0], z[0], path / f"{i}_predicted_p2.xyz")
+            ndarrays_to_xyz(arrays["predicted_p3"][0], z[0], path / f"{i}_predicted_p3.xyz")
+            ndarrays_to_xyz(arrays["predicted_p4"][0], z[0], path / f"{i}_predicted_p4.xyz")
+            ndarrays_to_xyz(arrays["predicted_p5"][0], z[0], path / f"{i}_predicted_p5.xyz")
+            ndarrays_to_xyz(arrays["predicted_p6"][0], z[0], path / f"{i}_predicted_p6.xyz")
+            ndarrays_to_xyz(arrays["predicted_p7"][0], z[0], path / f"{i}_predicted_p7.xyz")
+            ndarrays_to_xyz(arrays["predicted_p8"][0], z[0], path / f"{i}_predicted_p8.xyz")
+            ndarrays_to_xyz(arrays["predicted_p9"][0], z[0], path / f"{i}_predicted_p9.xyz")
+            ndarrays_to_xyz(arrays["predicted_p10"][0], z[0], path / f"{i}_predicted_p10.xyz")
+            ndarrays_to_xyz(arrays["predicted_p11"][0], z[0], path / f"{i}_predicted_p11.xyz")
             # Add vector information if relevant
-            if self._prediction_type == "vectors":
-                # Write vectors
-                vectors = self.get_vectors([z, r, p])
-                self.write_vectors(vectors, path, i)
+            # if self._prediction_type == "vectors":
+            #     # Write vectors
+            #     vectors = self.get_vectors([z, r, p])
+            #     self.write_vectors(vectors, path, i)
 
     def compute_metrics(self, epoch, split: str = "train"):
         if split == "train":
@@ -225,9 +262,9 @@ class CartesianMetrics(Callback):
         if self.write_rate <= 0:
             return
 
-        if self._output_type == "cartesians":
-            self.compute_metrics(epoch, "train")
-            self.compute_metrics(epoch, "validation")
+        # if self._output_type == "cartesians":
+        #     self.compute_metrics(epoch, "train")
+        #     self.compute_metrics(epoch, "validation")
 
         if self._writing(epoch):
             self.total_epochs = epoch
@@ -246,11 +283,11 @@ class CartesianMetrics(Callback):
             ["train", "val", "test"], [self.train, self.validation, self.test]
         ):
             if data is not None:
-                print(
-                    f"final {name} loss: {round(self.model.evaluate(*data, verbose=0), 8)}"
-                )
-                if self._output_type == "cartesians":
-                    self.compute_metrics(self.total_epochs + 1, name)
+                # print(
+                #     f"final {name} loss: {round(self.model.evaluate(*data, verbose=0), 8)}"
+                # )
+                # if self._output_type == "cartesians":
+                #     self.compute_metrics(self.total_epochs + 1, name)
                 if self.write_rate > 0:
                     self.write_cartesians(data, self.path / "post_training" / name)
 

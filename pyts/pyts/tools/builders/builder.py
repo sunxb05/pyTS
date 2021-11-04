@@ -1,5 +1,5 @@
 from typing import Union, Tuple
-
+import time
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Add, Input, Lambda
@@ -106,7 +106,7 @@ class Builder(object):
         for cluster_num, num_layers_in_cluster in enumerate(num_layers):
             skips.append(
                 MolecularConvolution(
-                    name=f"cluster{cluster_num}_skip",
+                    name=f"cluster{cluster_num}_skip_{time.time()}",
                     radial_factory=self.radial_factory,
                     si_units=si_units[cluster_num],
                     output_orders=self.output_orders,
@@ -119,7 +119,7 @@ class Builder(object):
             for layer_num in range(num_layers_in_cluster):
                 layers.append(
                     MolecularConvolution(
-                        name=f"cluster_{cluster_num}/layer_{layer_num}",
+                        name=f"cluster_{cluster_num}/layer_{layer_num}_{time.time()}",
                         radial_factory=self.radial_factory,
                         si_units=si_units[cluster_num],
                         output_orders=self.output_orders,
@@ -174,14 +174,14 @@ class Builder(object):
     def get_final_output(self, one_hot: tf.Tensor, inputs: list, output_dim: int = 1):
         output = inputs
         for i in range(self.num_final_si_layers):
-            output = MolecularSelfInteraction(self.final_si_units, name=f"si_{i}")(
+            output = MolecularSelfInteraction(self.final_si_units, name=f"si_{i}_{time.time()}")(
                 [one_hot] + output
             )
-            output = MolecularActivation(name=f"ea_{i}")([one_hot] + output)
+            output = MolecularActivation(name=f"ea_{i}_{time.time()}")([one_hot] + output)
         output = MolecularSelfInteraction(
-            self.final_si_units, name=f"si_{self.num_final_si_layers}"
+            self.final_si_units, name=f"si_{self.num_final_si_layers}_{time.time()}"
         )([one_hot] + output)
-        output = MolecularActivation(name=f"ea_{self.num_final_si_layers}")(
+        output = MolecularActivation(name=f"ea_{self.num_final_si_layers}_{time.time()}")(
             [one_hot] + output
         )
         return output

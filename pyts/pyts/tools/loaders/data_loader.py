@@ -15,7 +15,8 @@ class DataLoader(object):
         map_points: bool = True,
         splitting: Union[str, int, None] = "70:20:10",
         pre_load: bool = False,
-        num_points: int = 30,
+        # num_points: int = 30,
+        num_points: int = 36,
         **kwargs
     ):
         """
