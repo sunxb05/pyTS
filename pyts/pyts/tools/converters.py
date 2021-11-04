@@ -20,6 +20,7 @@ def element_mapping():
         "S": 16,
         "Se": 34,
         "Si": 14,
+        "Pd": 46,
     }
     reverse_mapping = dict([reversed(pair) for pair in mapping.items()])
     mapping.update(reverse_mapping)

@@ -145,7 +145,7 @@ class KernelBasis(Layer):
         mu = linspace(
             self.min_value, self.max_value, self._n_centers, endpoint=self.endpoint
         )
-
+        
         mu_prefix_shape = tuple([1 for _ in range(len(K.int_shape(in_tensor)) - 1)])
         mu = tf.reshape(mu, mu_prefix_shape + (-1,))
         values = self.kernel_func(in_tensor, mu)

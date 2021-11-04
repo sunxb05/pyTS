@@ -87,26 +87,26 @@ class TSLoader(DataLoader):
                     "product",
                 )
             }
-            energies = {
-                structure_type: np.asarray(
-                    dataset["{}/energies".format(structure_type)]
-                )
-                * self.EV_PER_HARTREE
-                for structure_type in ("ts", "reactant", "product")
-            }
-            noisy_indices = np.asarray(
-                dataset["noisy_reactions"], dtype="int"
-            )  # (16, )
+            # energies = {
+            #     structure_type: np.asarray(
+            #         dataset["{}/energies".format(structure_type)]
+            #     )
+            #     * self.EV_PER_HARTREE
+            #     for structure_type in ("ts", "reactant", "product")
+            # }
+            # noisy_indices = np.asarray(
+            #     dataset["noisy_reactions"], dtype="int"
+            # )  # (16, )
 
         # Pull out noise
-        if kwargs.get("remove_noise", False):
-            atomic_nums = np.delete(atomic_nums, noisy_indices, axis=0)
-            cartesians = {
-                k: np.delete(c, noisy_indices, axis=0) for k, c in cartesians.items()
-            }
-            energies = {
-                k: np.delete(e, noisy_indices, axis=0) for k, e in energies.items()
-            }
+        # if kwargs.get("remove_noise", False):
+        #     atomic_nums = np.delete(atomic_nums, noisy_indices, axis=0)
+        #     cartesians = {
+        #         k: np.delete(c, noisy_indices, axis=0) for k, c in cartesians.items()
+        #     }
+            # energies = {
+            #     k: np.delete(e, noisy_indices, axis=0) for k, e in energies.items()
+            # }
 
         # Remap
         if self.map_points:
@@ -156,19 +156,26 @@ class TSLoader(DataLoader):
                     )
                 )
                 if kwargs.get("output_distance_matrix", False)
-                else cartesians["ts"],
-                energies["ts"],
+                else cartesians["ts"]
+                # else cartesians["ts"],
+                # energies["ts"],
             ]
             if output_type == "energies":
                 y.pop(0)
             elif output_type == "both":
                 pass
-            else:
-                y.pop(1)
+            # else:
+            #     y.pop(1)
 
             # shuffle dataset
             if kwargs.get("shuffle", True):
                 x, y = self.shuffle_arrays(x, y, length)
+
+        # for i in x[0][0]:
+        #     print (i)
+        # print ('==========================')
+        # for j in y[0][0]:
+        #     print (j)
 
         # Split and serve data
         self.data = [x, y]
@@ -190,6 +197,7 @@ class TSLoader(DataLoader):
             ]
             return train, val, None
         else:
+            # print (super().load_data())
             return super().load_data()
 
     def make_siamese_dataset(self, tiled_atomic_nums, tiled_cartesians, labels):

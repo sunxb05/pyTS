@@ -30,7 +30,11 @@ class CrossValidate(KerasJob):
         model = None
         train_loss = []
         val_loss = []
-        loader, folds = self._load_data(loader_config)
+        test_loss = []
+        loader, folds_all = self._load_data(loader_config)
+        folds = folds_all[:-1]
+        test = folds_all[-1]
+
         print(f"**CROSS VALIDATING WITH {len(folds)} FOLDS**")
         root = self.exp_config["run_config"]["root_dir"]
 
@@ -39,7 +43,7 @@ class CrossValidate(KerasJob):
             print(f"CROSS VALIDATING USING FOLD {i} AS VAL FOLD...")
             val = folds[i]
             train = self._combine_folds(folds[:i] + folds[i + 1 :])
-            data = (train, val, None)  # No testing data
+            data = (train, val, test)
             model = self._load_fitable(loader, fitable_config)
 
             # Preload weights if necessary
@@ -65,8 +69,9 @@ class CrossValidate(KerasJob):
             # [(loss, metric1, metric2, ...), ...]
             train_loss.append(self._evaluate_fold(model, train))
             val_loss.append(self._evaluate_fold(model, val))
+            test_loss.append(self._evaluate_fold(model, test))
 
-        loss = np.array([train_loss, val_loss])  # (2, num_folds, ?)
+        loss = np.array([train_loss, val_loss, test_loss])  # (2, num_folds, ?)
         print(f"AVERAGE TRAIN LOSS ACROSS MODELS {np.mean(loss[0], axis=0).tolist()}")
         print(f"STANDARD DEVIATION: {np.std(loss[0], axis=0).tolist()}")
         print("Final train losses: {}".format("\n".join(map(str, train_loss))))
@@ -74,6 +79,13 @@ class CrossValidate(KerasJob):
         print(f"AVERAGE VAL LOSS ACROSS MODELS {np.mean(loss[1], axis=0).tolist()}")
         print(f"STANDARD DEVIATION: {np.std(loss[1], axis=0).tolist()}")
         print("Final val losses: {}".format("\n".join(map(str, val_loss))))
+
+        print(f"AVERAGE TEST LOSS ACROSS MODELS {np.mean(loss[2], axis=0).tolist()}")
+        print(f"STANDARD DEVIATION: {np.std(loss[2], axis=0).tolist()}")
+        print("Final test losses: {}".format("\n".join(map(str, test_loss))))
+
+        if self.exp_config["run_config"]["save_model"]:
+            self._save_fitable(run, model)
         return model
 
     def _evaluate_fold(self, fitable: Model, data: list):
@@ -107,3 +119,4 @@ class CrossValidate(KerasJob):
             [np.concatenate(y, axis=0) for y in y_arrays],
         ]
         return combined_folds
+

@@ -215,6 +215,16 @@ class Convolution(Layer, EquivariantLayer):
                 "and a list of features tensors."
             )
         conv_outputs = self._point_convolution(inputs)
+
+        # tf.print('inputs')
+        # tf.print(inputs[1])
+        # tf.print('===============self._point_convolution')
+        # tf.print ('                   =====                               ')
+        # tf.print ('                   =====                               ')
+        # tf.print ('                   =====                               ')
+        # tf.print ('                   =====                               ')
+        # tf.print(len(conv_outputs))
+        # tf.print(conv_outputs[0].shape)
         concat_outputs = self._concatenation(conv_outputs)
         si_outputs = self._self_interaction(concat_outputs)
         return self._equivariant_activation(si_outputs)
@@ -250,6 +260,9 @@ class Convolution(Layer, EquivariantLayer):
         output_tensors = []
         for tensor in features:
             feature_order = self.get_tensor_ro(tensor)
+            # tf.print(feature_order)
+            # tf.print('feature_order')
+
             for hfilter in [
                 f([image, vectors]) for f in self._filters[str(feature_order)]
             ]:
@@ -257,6 +270,12 @@ class Convolution(Layer, EquivariantLayer):
                 coefficient = self._possible_coefficient(
                     feature_order, filter_order, no_coefficients=False
                 )
+                # tf.print(filter_order)
+                # tf.print('filter_order')
+                # tf.print(coefficient)
+                # tf.print('coefficient')
+                # tf.print(hfilter.shape)
+                # tf.print('hfilter')
                 if coefficient is not False:
                     if self.sum_points:
                         equation = "ijk,mafj,mafk->mafi"
@@ -442,6 +461,15 @@ class HarmonicFilter(Layer, EquivariantLayer):
             return tf.expand_dims(radial, axis=-1)
         elif self.filter_order == 1:
             masked_radial = self.mask_radial(radial, vectors)
+            # tf.print("masked_radial")
+            # tf.print(masked_radial)
+
+            # tf.print("tf.expand_dims(vectors, axis=-2)")
+            # tf.print(tf.expand_dims(vectors, axis=-2))
+
+            # tf.print("tf.expand_dims(masked_radial, axis=-1)")
+            # tf.print(tf.expand_dims(masked_radial, axis=-1))
+
             # (batch, points, points, 1, 3) * (batch, points, points, filters, 1)
             return tf.expand_dims(vectors, axis=-2) * tf.expand_dims(
                 masked_radial, axis=-1
@@ -465,7 +493,7 @@ class HarmonicFilter(Layer, EquivariantLayer):
             condition = tf.tile(condition, [1, 1, radial.shape[-1]])
         else:
             condition = tf.tile(condition, [1, 1, 1, radial.shape[-1]])
-
+            
         # (batch, points, points, output_dim)
         return tf.where(condition, tf.zeros_like(radial), radial)
 

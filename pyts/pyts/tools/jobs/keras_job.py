@@ -5,6 +5,8 @@ from sacred.run import Run
 import tensorflow as tf
 from tensorflow.keras.callbacks import ReduceLROnPlateau, TensorBoard
 from tensorflow.keras.models import Model
+from keras.utils.vis_utils import plot_model
+from tensorflow.keras import backend as K
 
 from .job import Job
 from ..ingredients import (
@@ -90,9 +92,13 @@ class KerasJob(Job):
             with strategy.scope():
                 model = builder.get_model()
                 model.compile(**compile_kwargs)
+                # model.summary()
+                # plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
         else:
             model = builder.get_model()
             model.compile(**compile_kwargs)
+            # model.summary()
+            # plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
         return model
 
     def _fit(
@@ -135,6 +141,14 @@ class KerasJob(Job):
             verbose=self.exp_config["run_config"]["fit_verbosity"],
         )
         fitable.fit(**kwargs)
+
+        # outputs = []
+        # for layer in fitable.layers:
+        #     keras_function = K.function([fitable.input], [fitable.output])
+        #     outputs.append(keras_function([[x_train, y_train], 1]))
+        # print(outputs[0:1])
+
+
         return fitable
 
     def _test_fitable(self, run: Run, fitable: Model, test_data: tuple) -> float:

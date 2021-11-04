@@ -1,6 +1,6 @@
 import tensorflow as tf
 from tensorflow.keras.layers import Layer
-
+import time
 from .atomic_images import (
     OneHot,
     DistanceMatrix,
@@ -60,12 +60,23 @@ class Preprocessing(Layer):
 
     def call(self, inputs, **kwargs):
         z, r = inputs
+        # tf.print (z)
+        # tf.print (r)
+        # tf.print ('z r   ================================')
         one_hot = self.one_hot(z)
+        # tf.print (one_hot)
+        # tf.print ('one_hot =====================')
         dist_matrix = self.distance_matrix([one_hot, r])
+        # tf.print (dist_matrix)
+        # tf.print ('dist_matrix =====================')
         #  (batch, points, points, basis_functions)
         rbf = self.cutoff([dist_matrix, self.basis_function(dist_matrix)])
+        # tf.print (rbf[0,0,1,:])
+        # tf.print ('rbf =====================')
         # (batch, points, points, 3)
         vectors = self.unit_vectors(r)
+        # tf.print (vectors[0,0,1,:])
+        # tf.print ('vectors =====================')
         if self.sum_points:
             rbf = tf.reduce_sum(rbf, axis=-2)
         return [one_hot, rbf, vectors]
