@@ -1,11 +1,10 @@
-import socket
 from abc import ABCMeta, abstractmethod
 from copy import copy
 from pathlib import Path
 from typing import List
 
 from sacred import Experiment
-from sacred.observers import FileStorageObserver, MongoObserver, RunObserver
+from sacred.observers import FileStorageObserver
 from tensorflow.keras.models import Model
 
 from pyts.tools.ingredients import builder_ingredient, data_ingredient
@@ -17,16 +16,12 @@ class Job(metaclass=ABCMeta):
         self,
         exp_config: dict = None,
         add_defaults: bool = True,
-        mongo_hostnames: list = None,
     ):
         exp_config = exp_config or dict()
         if add_defaults:
             self.exp_config = self.add_config_defaults(exp_config)
         else:
             self.exp_config = exp_config
-        if mongo_hostnames is None:
-            mongo_hostnames = ["tater"]
-        self.mongo_hostnames = mongo_hostnames
 
         self._experiment = None
         self._observers = []
@@ -34,13 +29,6 @@ class Job(metaclass=ABCMeta):
     @property
     def default_observers(self):
         observers = []
-        if socket.gethostname() in self.mongo_hostnames:
-            observers.append(
-                MongoObserver(
-                    url=f"mongodb://sample:password@localhost:27017/?authMechanism=SCRAM-SHA-1",
-                    db_name="db",
-                )
-            )
         observers.append(
             FileStorageObserver(self.exp_config.get("storage_dir", "./sacred_storage"))
         )
@@ -79,23 +67,6 @@ class Job(metaclass=ABCMeta):
             else:
                 ec.setdefault(name, conf)
         return ec
-
-    def update_observers(self, o: List[RunObserver]):
-        """
-        ONLY USE BEFORE CALLING `self.experiment` AS OBSERVERS CANNOT BE SET AFTER THE EXPERIMENT
-        IS CREATED.
-
-        :param o: List of sacred RunObservers to update Job observers.
-        """
-        self._observers.extend(o)
-
-    def override_observers(self, o: List[RunObserver]):
-        """
-        ONLY USE BEFORE CALLING `self.experiment`. Replace defaults with new list of
-        RunObserver objects.
-        :param o: List of new sacred RunObservers
-        """
-        self._observers = o
 
     @abstractmethod
     def _main(self, run, seed, fitable, fitable_config, loader_config):
