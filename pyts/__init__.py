@@ -11,5 +11,5 @@ __version__ = "0.0.1"
 __author__ = "Xiaobo Sun"
 __email__ = "sunxb05@gmail.com"
 __description__ = (
-    "Package containing pyts built using Tensorflow 2"
+    "Package containing pyTS built using Tensorflow 2"
 )
