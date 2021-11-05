@@ -7,9 +7,9 @@ import os
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"  # FATAL
 logging.getLogger("tensorflow").setLevel(logging.FATAL)
 
-__version__ = "2.5.0"
-__author__ = "Riley Jackson"
-__email__ = "rjjackson@upei.ca"
+__version__ = "0.0.1"
+__author__ = "Xiaobo Sun"
+__email__ = "sunxb05@gmail.com"
 __description__ = (
-    "Package containing Tensor Field Network tf.keras layers built using Tensorflow 2"
+    "Package containing pyts built using Tensorflow 2"
 )

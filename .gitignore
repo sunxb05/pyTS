@@ -14,7 +14,7 @@ coverage.xml
 .pytest_cache
 
 docs/_build
-pyts/others
+others
 
 # ide
 .idea
