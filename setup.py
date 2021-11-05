@@ -3,7 +3,7 @@ import os
 
 from setuptools import find_packages, setup
 
-from pyts.pyts import __author__, __description__, __email__, __version__
+from pyts import __author__, __description__, __email__, __version__
 
 setup(
     name="pyts",
