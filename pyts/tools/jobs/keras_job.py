@@ -13,7 +13,6 @@ from ..ingredients import (
     get_data_loader,
     get_builder,
 )
-# from ..builders import Loss
 from ..loaders import DataLoader
 
 
@@ -63,21 +62,6 @@ class KerasJob(Job):
             data = loader.load_data(**config["load_kwargs"])
         return loader, data
 
-
-    # # Define custom loss
-    # def Loss(self, layer):
-
-    #     # def loss(y_pred,y_true):
-    #     #     # custom_loss = tf.abs(y_pred - y_true) + tf.abs(layer- y_true)
-    #     #     custom_loss = tf.abs(y_pred - y_true)
-    #     #     return tf.reduce_mean(custom_loss)
-
-    #     def loss(y_true, y_pred):
-    #         return K.mean(K.square(y_pred - y_true) + K.square(layer[0]), axis=-1)
-    #         # return K.mean(K.square(y_pred - y_true) + K.square(layer[0]) + K.square(layer[1]), axis=-1)
-    #     return loss
-
-
     def _load_fitable(self, loader: DataLoader, fitable_config: dict = None) -> Model:
         """
         Defines and compiles a fitable (keras.model or keras_tuner.tuner) which implements
@@ -96,32 +80,25 @@ class KerasJob(Job):
         )
         builder = get_builder(**conf)
         run_config = self.exp_config["run_config"]
-
+        compile_kwargs = dict(
+            loss=run_config["loss"],
+            loss_weights=run_config["loss_weights"],
+            optimizer=run_config["optimizer"],
+            metrics=run_config["metrics"],
+            run_eagerly=run_config["run_eagerly"],
+        )
         if run_config["use_strategy"]:
             strategy = tf.distribute.MirroredStrategy()
             with strategy.scope():
                 model = builder.get_model()
                 model.compile(**compile_kwargs)
-                model.summary()
-                plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
+                # model.summary()
+                # plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
         else:
-
             model = builder.get_model()
-
-            compile_kwargs = dict(
-                # loss=self.Loss(layer=[model.get_layer("cartesians_0").output, model.get_layer("cartesians_1").output]),
-                # loss=self.Loss(layer=[model.get_layer("cartesians_1").output]),
-                loss=run_config["loss"],
-                loss_weights=run_config["loss_weights"],
-                optimizer=run_config["optimizer"],
-                metrics=run_config["metrics"],
-                run_eagerly=run_config["run_eagerly"],
-            )
-
-
             model.compile(**compile_kwargs)
-            model.summary()
-            plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
+            # model.summary()
+            # plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
         return model
 
     def _fit(
@@ -144,12 +121,12 @@ class KerasJob(Job):
         if self.exp_config["run_config"]["use_default_callbacks"]:
             callbacks.extend(
                 [
-                    # TensorBoard(
-                    #     **dict(
-                    #         **self.exp_config["tb_config"],
-                    #         log_dir=tensorboard_directory,
-                    #     )
-                    # ),
+                    TensorBoard(
+                        **dict(
+                            **self.exp_config["tb_config"],
+                            log_dir=tensorboard_directory,
+                        )
+                    ),
                     ReduceLROnPlateau(**self.exp_config["lr_config"]),
                 ]
             )
