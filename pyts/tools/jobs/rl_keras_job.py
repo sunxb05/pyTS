@@ -8,7 +8,7 @@ from tensorflow.keras.models import Model
 from keras.utils.vis_utils import plot_model
 from tensorflow.keras import backend as K
 
-from .job import Job
+from .rl_job import Job
 from ..ingredients import (
     get_data_loader,
     get_builder,

@@ -3,28 +3,19 @@ import os
 import random
 import shutil
 from statistics import mean
-from nn import ConvolutionalNeuralNetwork
 import datetime
-from logger import Logger
+from .rl_logger import Logger
+
+from ..builder.rl_cartesian_builder import CartesianBuilder
+from .rl_keras_job import KerasJob
 
 
-class BaseGameModel(KerasJob):
+class BaseModel(KerasJob):
 
     def __init__(self, game_name, mode_name, logger_path, observation_space, action_space):
         self.action_space = action_space
         self.observation_space = observation_space
         self.logger = Logger(game_name + " " + mode_name, logger_path)
-
-
-        game_model, 
-        env: ChemEnv, 
-        total_step_limit: int, 
-        total_run_limit: int,
-        run: Run,
-        seed: int,
-        fitable: Model = None,
-        fitable_config: dict = None,
-        loader_config: dict = None,
 
     def save_run(self, score, step, run):
         self.logger.add_score(score)
@@ -47,31 +38,31 @@ class BaseGameModel(KerasJob):
         return str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M'))
 
 
-class DDQNGameModel(BaseGameModel):
+class RlModel(BaseModel):
 
     def __init__(self, game_name, mode_name, observation_space, action_space, logger_path, model_path):
-        BaseGameModel.__init__(self, game_name,
+        BaseModel.__init__(self, game_name,
                                mode_name,
                                logger_path,
                                observation_space,
                                action_space)
         self.model_path = model_path
-        self.ddqn = self._load_fitable(loader, fitable_config)
+        self.rl = self._load_fitable(loader, fitable_config)
         if os.path.isfile(self.model_path):
-            self.ddqn.load_weights(self.model_path)
+            self.rl.load_weights(self.model_path)
 
     def _save_model(self):
-        self.ddqn.save_weights(self.model_path)
+        self.rl.save_weights(self.model_path)
 
 
-class DDQNSolver(DDQNGameModel):
+class rlSolver(RlModel):
 
     def __init__(self, game_name, observation_space, action_space):
         testing_model_path = "./output/neural_nets/" + game_name + "/testing/model.h5"
         assert os.path.exists(os.path.dirname(testing_model_path)), "No testing model in: " + str(testing_model_path)
-        DDQNGameModel.__init__(self,
+        RlModel.__init__(self,
                                game_name,
-                               "DDQN testing",
+                               "rl testing",
                                observation_space,
                                action_space,
                                "./output/logs/" + game_name + "/testing/" + self._get_date() + "/",
@@ -80,16 +71,16 @@ class DDQNSolver(DDQNGameModel):
     def act(self, state):
         if np.random.rand() < EXPLORATION_TEST:
             return random.randrange(self.action_space)
-        q_values = self.ddqn.predict(state)
+        q_values = self.rl.predict(state)
         return np.argmax(q_values[0])
 
 
-class DDQNTrainer(DDQNGameModel):
+class rlTrainer(RlModel):
 
     def __init__(self, game_name, observation_space, action_space):
-        DDQNGameModel.__init__(self,
+        RlModel.__init__(self,
                                game_name,
-                               "DDQN training",
+                               "rl training",
                                observation_space,
                                action_space,
                                "./output/logs/" + game_name + "/training/" + self._get_date() + "/",
@@ -99,7 +90,7 @@ class DDQNTrainer(DDQNGameModel):
             shutil.rmtree(os.path.dirname(self.model_path), ignore_errors=True)
         os.makedirs(os.path.dirname(self.model_path))
 
-        self.ddqn_target = self._load_fitable(loader, fitable_config)
+        self.rl_target = self._load_fitable(loader, fitable_config)
         self._reset_target_network()
         self.exploration_rate = EXPLORATION_MAX
         self.memory = []
@@ -108,7 +99,7 @@ class DDQNTrainer(DDQNGameModel):
         if np.random.rand() < self.exploration_rate:
         #or len(self.memory) < REPLAY_START_SIZE
             return random.randrange(self.action_space)
-        q_values = self.ddqn.predict(state)
+        q_values = self.rl.predict(state)
         return np.argmax(q_values[0])
 
     def remember(self, state, action, reward, next_state, terminal):
@@ -142,8 +133,8 @@ class DDQNTrainer(DDQNGameModel):
             # reward = 1
             # np.amax  The maximum value along a given axis.
             if not terminal:
-                q_update = (reward + GAMMA * np.amax(self.ddqn_target.predict(state_next)[0]))
-            q_values = self.ddqn.predict(state)
+                q_update = (reward + GAMMA * np.amax(self.rl_target.predict(state_next)[0]))
+            q_values = self.rl.predict(state)
             q_values[0][action] = q_update
 
             # Preload weights if necessary
@@ -153,7 +144,7 @@ class DDQNTrainer(DDQNGameModel):
 
             model = self._fit(
                 run,
-                self.ddqn,
+                self.rl,
                 data,
                 callbacks=[
                     CartesianMetrics(
@@ -164,7 +155,7 @@ class DDQNTrainer(DDQNGameModel):
                 ],
             )
 
-            fit = self.ddqn.fit(state, q_values, batch_size=BATCH_SIZE, verbose=0)
+            fit = self.rl.fit(state, q_values, batch_size=BATCH_SIZE, verbose=0)
             loss = fit.history["loss"][0]
             # accuracy = fit.history["accuracy"][0]
             # return loss, accuracy, q_update
@@ -173,4 +164,4 @@ class DDQNTrainer(DDQNGameModel):
         self.exploration_rate = max(EXPLORATION_MIN, self.exploration_rate)
 
     def _reset_target_network(self):
-        self.ddqn_target.set_weights(self.ddqn.get_weights())
+        self.rl_target.set_weights(self.rl.get_weights())
