@@ -105,6 +105,24 @@ lr_config = {  # Passed directly to ReduceLROnPlateau callback
 
 cm_config = {"max_structures": 64, "write_rate": 50}
 
+rl_config = {"name": "rl", 
+             "mode": "training", # training, testing
+             "step_limit": 100000, 
+             "run_limit": 10000,
+             "GAMMA": 0.95,
+             "MEMORY_SIZE": 100000,
+             "BATCH_SIZE": 4,
+             "TRAINING_FREQUENCY": 4,
+             # "TARGET_NETWORK_UPDATE_FREQUENCY": 40000,
+             "TARGET_NETWORK_UPDATE_FREQUENCY": 4,
+             # "MODEL_PERSISTENCE_UPDATE_FREQUENCY": 10000,
+             "MODEL_PERSISTENCE_UPDATE_FREQUENCY": 4,
+             # "REPLAY_START_SIZE": 50000,          
+             "EXPLORATION_MAX": 1.0,
+             "EXPLORATION_MIN": 0.1,
+             "EXPLORATION_TEST": 0.02,
+             "EXPLORATION_DECAY": 0.995
+}
 
 # Precanned search-spaces
 default_architecture_search = {  # 1994 possible models
