@@ -173,4 +173,5 @@ class Job(metaclass=ABCMeta):
             "builder_config": copy(cd.builder_config),
             "tb_config": copy(cd.tb_config),
             "lr_config": copy(cd.lr_config),
+            "rl_config": copy(cd.rl_config)
         }

@@ -1,25 +1,12 @@
 import tensorflow as tf
 from tensorflow.keras import Model
-from tensorflow.keras.layers import Input, Lambda, Add
+from tensorflow.keras.layers import Input, Lambda, Add, Dense, Flatten
 
 from .rl_multi_trunk_builder import DualTrunkBuilder
 from ...layers.utility_layers import MaskedDistanceMatrix
 
 
-
-from keras.models import Sequential
-from keras.layers import Dense
-from keras.optimizers import Adam
-from collections import deque
-LEARNING_RATE = 0.001
-
-MEMORY_SIZE = 1000000
-EXPLORATION_MAX = 1.0
-EXPLORATION_MIN = 0.01
-
-
-
-class CartesianBuilder(DualTrunkBuilder):
+class RlCartesianBuilder(DualTrunkBuilder):
     def __init__(self, *args, **kwargs):
         self.prediction_type = kwargs.pop(
             "prediction_type", "cartesians"
@@ -66,13 +53,26 @@ class CartesianBuilder(DualTrunkBuilder):
         return point_clouds, inputs
 
     def get_model_output(self, point_cloud: list, inputs: list):
-        one_hot, output_r, output_p = self.mix_dual_trunks(
+        one_hot, output = self.mix_dual_trunks(
             point_cloud, inputs, output_order=1, output_type=self.output_type
         )
-        output_r = Lambda(lambda x: tf.squeeze(x, axis=-2), name=f"{self.prediction_type}_r")(
-            output_r[0]
+        output = Lambda(lambda x: tf.squeeze(x, axis=-2), name=self.prediction_type)(
+            output[0]
         )
-        output_p = Lambda(lambda x: tf.squeeze(x, axis=-2), name=f"{self.prediction_type}_p")(
-            output_p[0]        
+        output = Flatten(name="Flatten")(output)
+        output = Dense(10, activation='relu', name="dense")(
+            output
         )
-        return [output_r, output_p]  # (batch, points, 3)
+        return output  # (batch, points, 3)
+
+    # def get_model_output(self, point_cloud: list, inputs: list):
+    #     one_hot, output_r, output_p = self.mix_dual_trunks(
+    #         point_cloud, inputs, output_order=1, output_type=self.output_type
+    #     )
+    #     output_r = Lambda(lambda x: tf.squeeze(x, axis=-2), name=f"{self.prediction_type}_r")(
+    #         output_r[0]
+    #     )
+    #     output_p = Lambda(lambda x: tf.squeeze(x, axis=-2), name=f"{self.prediction_type}_p")(
+    #         output_p[0]
+    #     )
+    #     return [output_r, output_p]  # (batch, points, 3)

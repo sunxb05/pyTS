@@ -3,8 +3,10 @@ import os
 from sacred import Ingredient
 
 from .builders import (
-    CartesianBuilder
+    CartesianBuilder,
+    RlCartesianBuilder
 )
+
 from .loaders import TSLoader
 from .loggers import SacredMetricLogger
 from .radials import get_radial_factory
@@ -54,6 +56,8 @@ def get_builder(
 
     if builder_type == "cartesian_builder":
         return CartesianBuilder(**kwargs)
+    elif builder_type == "rl_cartesian_builder":
+        return RlCartesianBuilder(**kwargs)
     else:
         raise ValueError(
             "arg `builder_type` had value: {} which is not supported. Check "

@@ -46,22 +46,33 @@ class DualTrunkBuilder(Builder):
         outputs = [layer(z + x)[0] for x, z in zip(inputs, point_cloud)]
         output_type = output_type or "vectors"
         if output_type == "cartesians":
-            output_r = Lambda(lambda x: (x[0] + x[1]), name="learned_midpoint_r")(outputs)
-            output_p = Lambda(lambda x: (x[0] + x[1]), name="learned_midpoint_p")(outputs)
+            output = Lambda(lambda x: (x[0] + x[1]), name="learned_midpoint")(outputs)
+            # output_r = Lambda(lambda x: (x[0] + x[1]), name="learned_midpoint_r")(outputs)
+            # output_p = Lambda(lambda x: (x[0] + x[1]), name="learned_midpoint_p")(outputs)
 
         else:
             output = Lambda(lambda x: tf.abs(x[1] - x[0]), name="absolute_difference")(
                 outputs
             )
-        output_r = self.get_final_output(one_hot, output_r, 1, 'r')
-        output_p = self.get_final_output(one_hot, output_p, 1, 'p')
-        return one_hot, output_r, output_p
+        # output_r = self.get_final_output(one_hot, output_r, 1, 'r')
+        # output_p = self.get_final_output(one_hot, output_p, 1, 'p')
+        # return one_hot, output_r, output_p
+        output = self.get_final_output(one_hot, output)
+        return one_hot, output
 
-    def get_final_output(self, one_hot: tf.Tensor, inputs: list, output_dim: int, lname: str):
+    # def get_final_output(self, one_hot: tf.Tensor, inputs: list, output_dim: int, lname: str):
+    #     output = inputs
+    #     for i in range(self.num_final_si_layers):
+    #         output = SelfInteraction(self.final_si_units, name=f"si_{i}_{lname}")(output)
+    #     return SelfInteraction(output_dim, name=f"si_{self.num_final_si_layers}_{lname}")(
+    #         output
+    #     )
+
+    def get_final_output(self, one_hot: tf.Tensor, inputs: list, output_dim: int = 1):
         output = inputs
         for i in range(self.num_final_si_layers):
-            output = SelfInteraction(self.final_si_units, name=f"si_{i}_{lname}")(output)
-        return SelfInteraction(output_dim, name=f"si_{self.num_final_si_layers}_{lname}")(
+            output = SelfInteraction(self.final_si_units, name=f"si_{i}")(output)
+        return SelfInteraction(output_dim, name=f"si_{self.num_final_si_layers}")(
             output
         )
 
