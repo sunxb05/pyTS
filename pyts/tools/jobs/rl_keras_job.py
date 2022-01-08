@@ -56,10 +56,7 @@ class KerasJob(Job):
         """
         config = config or self.exp_config["loader_config"]
         loader = get_data_loader(**config)
-        if self.exp_config["run_config"]["select_few"]:
-            data = loader.few_examples(**config["load_kwargs"])
-        else:
-            data = loader.load_data(**config["load_kwargs"])
+        data = loader.load_data(**config["load_kwargs"])
         return loader, data
 
     def _load_fitable(self, loader: DataLoader, fitable_config: dict = None) -> Model:
@@ -87,18 +84,11 @@ class KerasJob(Job):
             metrics=run_config["metrics"],
             run_eagerly=run_config["run_eagerly"],
         )
-        if run_config["use_strategy"]:
-            strategy = tf.distribute.MirroredStrategy()
-            with strategy.scope():
-                model = builder.get_model()
-                model.compile(**compile_kwargs)
-                model.summary()
-                plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
-        else:
-            model = builder.get_model()
-            model.compile(**compile_kwargs)
-            model.summary()
-            plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
+
+        model = builder.get_model()
+        model.compile(**compile_kwargs)
+        model.summary()
+        plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
         return model
 
     def _fit(
@@ -121,12 +111,6 @@ class KerasJob(Job):
         if self.exp_config["run_config"]["use_default_callbacks"]:
             callbacks.extend(
                 [
-                    TensorBoard(
-                        **dict(
-                            **self.exp_config["tb_config"],
-                            log_dir=tensorboard_directory,
-                        )
-                    ),
                     ReduceLROnPlateau(**self.exp_config["lr_config"]),
                 ]
             )
@@ -173,22 +157,19 @@ class KerasJob(Job):
         self.exp_config["run_config"]["model_path"] = model_path
         return model_path
 
-    def _act(self):
-        print ("act")
+    # def act(self):
+        # print ("act")
 
-    # def act(self, state):
-    #     if np.random.rand() < self.exploration_rate:
-    #     #or len(self.memory) < REPLAY_START_SIZE
-    #         return random.randrange(self.action_space)
-    #     q_values = self.rl.predict(state)
-    #     return np.argmax(q_values[0])
+    def act(self, fitable, state):
+        q_values = fitable.predict(state)
+        return np.argmax(q_values[0])
 
-    def _remember(self, state, action, reward, next_state, terminal):
+    def remember(self, state, action, reward, next_state, terminal):
         self.memory.append((state, action, reward, next_state, terminal))
         if len(self.memory) > MEMORY_SIZE:
             self.memory.pop(0)
 
-    def _step_update(self, total_step):
+    def step_update(self, total_step):
 
         if total_step % TRAINING_FREQUENCY == 0:
             # loss, accuracy, average_max_q = self.experience_replay()
@@ -204,15 +185,12 @@ class KerasJob(Job):
             self._reset_target_network()
             print('{{"metric": "total_step", "value": {}}}'.format(total_step))
 
-    def _experience_replay(self, fitable):
+    def experience_replay(self, fitable):
         if len(self.memory) < BATCH_SIZE:
             return
         batch = random.sample(self.memory, BATCH_SIZE)
         for state, action, reward, state_next, terminal in batch:
-            # reward = -1
             q_update = reward
-            # reward = 1
-            # np.amax  The maximum value along a given axis.
             if not terminal:
                 q_update = (reward + GAMMA * np.amax(self.rl_target.predict(state_next)[0]))
             q_values = fitable.predict(state)
@@ -244,5 +222,5 @@ class KerasJob(Job):
         self.exploration_rate *= EXPLORATION_DECAY
         self.exploration_rate = max(EXPLORATION_MIN, self.exploration_rate)
 
-    def _reset_target_network(self):
+    def reset_target_network(self):
         self.rl_target.set_weights(self.rl.get_weights())

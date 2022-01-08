@@ -27,7 +27,6 @@ class rl(KerasJob):
         fitable: Model = None,
         fitable_config: dict = None,
         loader_config: dict = None,
-
     ):
 
         run_step = 0
@@ -38,19 +37,16 @@ class rl(KerasJob):
         total_step_limit = 2
 
         loader, data = self._load_data(loader_config)
+
         fitable = fitable or self._load_fitable(loader, fitable_config)
 
-
         while True:
-            print ("hello world")
             if total_run_limit is not None and run_step >= total_run_limit:
                 print ("Reached total run limit of: " + str(total_run_limit))
                 exit(0)
-
             run_step += 1
-            # state = env.reset()
-            # state = np.reshape(state, [1, self.observation_space])
-            step = 0
+            state = env.reset()
+            step  = 0
             score = 0
             while True:
                 if total_step >= total_step_limit:
@@ -58,16 +54,14 @@ class rl(KerasJob):
                     exit(0)
                 total_step += 1
                 step += 1
-                action = self._act()
-                action = self._act(state)
-                step_name = str(run_step)+"_"+str(step)
-                state_next, reward, terminal, info = env.step(action, step_name)
+                action = self.act(state)
+                state_next, reward, terminal, info = env.step(action)
                 score += reward
                 reward = reward if not terminal else -reward
                 state_next = np.reshape(state_next, [1, self.observation_space])
-                self._remember(state, action, reward, state_next, terminal)
+                self.remember(state, action, reward, state_next, terminal)
                 state = state_next
-                self._step_update(total_step)
+                self.step_update(total_step)
                 if terminal:
-                    self._save_run(score, step, run_step)
+                    self.save_run(score, step, run_step)
                     break

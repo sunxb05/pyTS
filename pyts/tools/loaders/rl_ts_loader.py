@@ -128,6 +128,8 @@ class TSLoader(DataLoader):
                 cartesians["product_complex"]
                 if kwargs.get("use_complexes", False)
                 else cartesians["product"],
+                # cartesians["ts"]
+
             ]
             y = [
                 np.triu(
