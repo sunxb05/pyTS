@@ -87,12 +87,12 @@ class KerasJob(Job):
 
         model = builder.get_model()
         model.compile(**compile_kwargs)
-        model.summary()
-        plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
+        # model.summary()
+        # plot_model(model, to_file='discriminator_plot.png', show_shapes=True, show_layer_names=True)
         return model
 
     def _fit(
-        self, run: Run, fitable: Model, data: tuple, callbacks: list = None,
+        self, run: Run, fitable: Model, data: tuple,
     ) -> Model:
         """
 
@@ -106,29 +106,21 @@ class KerasJob(Job):
         :return: tensorflow.keras.Model object.
         """
         tensorboard_directory = self.exp_config["run_config"]["root_dir"] / "logs"
-        (x_train, y_train), val, _ = data
-        callbacks = callbacks or []
-        if self.exp_config["run_config"]["use_default_callbacks"]:
-            callbacks.extend(
-                [
-                    ReduceLROnPlateau(**self.exp_config["lr_config"]),
-                ]
-            )
+        x_train, y_train = data[0]
+
         kwargs = dict(
-            x=x_train,
+            x=x_train[0],
             y=y_train,
             epochs=self.exp_config["run_config"]["epochs"],
             batch_size=self.exp_config["run_config"]["batch_size"],
-            validation_data=val,
             class_weight=self.exp_config["run_config"]["class_weight"],
-            callbacks=callbacks,
             verbose=self.exp_config["run_config"]["fit_verbosity"],
         )
         fitable.fit(**kwargs)
 
         return fitable
 
-    def _test_fitable(self, run: Run, fitable: Model, test_data: tuple) -> float:
+    def _test_fitable(self, run: Run, fitable: Model, test_data: list) -> float:
         """
         :param fitable: tensorflow.keras.Model object.
         :param test_data: tuple. contains (x_test, y_test).
@@ -164,35 +156,29 @@ class KerasJob(Job):
         q_values = fitable.predict(state)
         return np.argmax(q_values[0])
 
-    def remember(self, state, action, reward, next_state, terminal):
-        self.memory.append((state, action, reward, next_state, terminal))
-        if len(self.memory) > MEMORY_SIZE:
-            self.memory.pop(0)
+    def remember(self, memory, state, action, reward, next_state, terminal):
+        memory.append((state, action, reward, next_state, terminal))
+        if len(memory) > MEMORY_SIZE:
+            memory.pop(0)
 
-    def step_update(self, total_step):
+    def step_update(self, logger, total_step):
 
         if total_step % TRAINING_FREQUENCY == 0:
-            # loss, accuracy, average_max_q = self.experience_replay()
             loss, average_max_q = self._experience_replay()
-            self.logger.add_loss(loss)
-            # self.logger.add_accuracy(accuracy)
-            self.logger.add_q(average_max_q)
+            logger.add_loss(loss)
+            logger.add_q(average_max_q)
 
         if total_step % MODEL_PERSISTENCE_UPDATE_FREQUENCY == 0:
-            self._save_model()
+            self._save_fitable(run, fitable)
 
-        if total_step % TARGET_NETWORK_UPDATE_FREQUENCY == 0:
-            self._reset_target_network()
-            print('{{"metric": "total_step", "value": {}}}'.format(total_step))
-
-    def experience_replay(self, fitable):
-        if len(self.memory) < BATCH_SIZE:
+    def _experience_replay(self, run, fitable):
+        if len(memory) < BATCH_SIZE:
             return
-        batch = random.sample(self.memory, BATCH_SIZE)
+        batch = random.sample(memory, BATCH_SIZE)
         for state, action, reward, state_next, terminal in batch:
             q_update = reward
             if not terminal:
-                q_update = (reward + GAMMA * np.amax(self.rl_target.predict(state_next)[0]))
+                q_update = (reward + GAMMA * np.amax(fitable.predict(state_next)[0]))
             q_values = fitable.predict(state)
             q_values[0][action] = q_update
 
@@ -204,23 +190,8 @@ class KerasJob(Job):
             model = self._fit(
                 run,
                 fitable,
-                data,
-                callbacks=[
-                    CartesianMetrics(
-                        self.exp_config["run_config"]["root_dir"] / "cartesians",
-                        *data,
-                        **self.exp_config["cm_config"],
-                    )
-                ],
+                [state, q_values]
             )
+            loss = model.history["loss"][0]
 
-            fit = fitable.fit(state, q_values, batch_size=BATCH_SIZE, verbose=0)
-            loss = fit.history["loss"][0]
-            # accuracy = fit.history["accuracy"][0]
-            # return loss, accuracy, q_update
             return loss,  q_update
-        self.exploration_rate *= EXPLORATION_DECAY
-        self.exploration_rate = max(EXPLORATION_MIN, self.exploration_rate)
-
-    def reset_target_network(self):
-        self.rl_target.set_weights(self.rl.get_weights())
