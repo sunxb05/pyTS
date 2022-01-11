@@ -21,10 +21,10 @@ class rl(KerasJob):
 
     def _main(
         self,
-        env: ChemEnv,
-        logger: Logger
-        run: Run,
+        # env: ChemEnv,
+        # logger: Logger,
         seed: int,
+        run: Run,
         fitable: Model = None,
         fitable_config: dict = None,
         loader_config: dict = None,
@@ -36,6 +36,7 @@ class rl(KerasJob):
         memory = []
 
         rl_config = self.exp_config["rl_config"]
+        root = self.exp_config["run_config"]["root_dir"]
         total_run_limit = rl_config["total_run_limit"]
         # total_step_limit = rl_config["total_step_limit"]
         total_step_limit = 2
@@ -43,7 +44,11 @@ class rl(KerasJob):
         loader, data = self._load_data(loader_config)
         fitable = fitable or self._load_fitable(loader, fitable_config)
         env = ChemEnv(data)
-        logger = Logger("rl", logger_path)
+
+        logger = Logger("rl", root)
+        # if os.path.exists(os.path.dirname(root)):
+        #     shutil.rmtree(os.path.dirname(root), ignore_errors=True)
+        # os.makedirs(os.path.dirname(root))
 
         while True:
             if total_run_limit is not None and run_step >= total_run_limit:
@@ -51,6 +56,8 @@ class rl(KerasJob):
                 exit(0)
 
             state = env.reset(ml_number)
+            print ("state")
+            print (state)
             ml_number+= 1
             run_step += 1
             step  = 0
@@ -62,7 +69,11 @@ class rl(KerasJob):
                 total_step += 1
                 step += 1
                 action = self.act(fitable, state)
+                print ("action")
+                print(action)
                 state_next, reward, terminal, info = env.step(action)
+                print ("state_next, reward, terminal, info")
+                print (state_next, reward, terminal, info)
                 score += reward
                 reward = reward if not terminal else -reward
                 state_next = np.reshape(state_next, [1, self.observation_space])

@@ -1,13 +1,8 @@
 import math
 import numpy as np
-
 from tensorflow.keras.models import load_model
-from ..callbacks import CartesianMetrics
 from tensorflow.keras.models import Model
-from .rl_lin_int import IntMOL
-
-import sys
-import numpy as np
+from ...layers import MaskedDistanceMatrix, OneHot
 
 
 class ChemEnv():
@@ -16,9 +11,14 @@ class ChemEnv():
         self.state = None
         self.ts_threshold = 0.1
         self.data = data
-        path = self.exp_config["run_config"]["model_path"]
-        print(f"Loading pre-trained model from file {path}")
+        # path = self.exp_config["run_config"]["model_path"]
+        # print(f"Loading pre-trained model from file {path}")
+        path = "/Users/xiaobo/pyTS/others/run/0104/sacred_storage/1/model.hdf5"
         self.model = load_model(path)
+
+    def tfn_mae(self, y_pred, y_true):
+        loss = tf.abs(y_pred - y_true)
+        return tf.reduce_mean(loss[loss != 0])
 
     @staticmethod
     def _structure_loss(z, y_pred, y_true):
@@ -64,12 +64,12 @@ class ChemEnv():
         r = self.state[0][1]
         p = self.state[0][2]
         t = self.state[0][3]
-        y_true = data[1][0]
+        y_true = self.state[1][0]
 
         action_pair = [[0.1, 0.1], [0.1, 0.2], [0.1, 0.2], [0.1, 0.1], [0.1, 0.2], [0.1, 0.2], [0.1, 0.1], [0.1, 0.2], [0.1, 0.2], [0.1, 0.2]]
         reactent = self._int_mol(r, t, action_pair[action][0])
         product  = self._int_mol(t, p, action_pair[action][1])
-        ts_predicted = self.model.predict([[z, reactent, product, ts_predicted], [y_true]])
+        ts_predicted = self.model.predict([[z, reactent, product], [y_true]])
         reward = self._structure_loss(z, ts_predicted, y_true)
 
         done =  reward < self.ts_threshold
@@ -82,10 +82,13 @@ class ChemEnv():
         return np.array(self.state), reward, done, {}
 
     def reset(self, ml_number):
-        z = self.data[0][0]
-        r = self.data[0][1]
-        p = self.data[0][2]
+
+        (x, y) =  self.data[0]
+        z = x[0]
+        r = x[1]
+        p = x[2]
+        y_true = y[0]
         ts_predicted = self.model.predict(self.data[0])
-        self.state = [[z[ml_number], r[ml_number], p[ml_number], ts_predicted]], [y_true[ml_number]]
+        self.state = [[z[ml_number], r[ml_number], p[ml_number], ts_predicted[ml_number]]], [y_true[ml_number]]
 
         return self.state

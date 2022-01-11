@@ -15,10 +15,10 @@ MAX_LOSS = 5
 class Logger:
 
     def __init__(self, header, directory_path):
-        directory_path = directory_path
-        if os.path.exists(directory_path):
-            shutil.rmtree(directory_path, ignore_errors=True)
-        os.makedirs(directory_path)
+        # directory_path = directory_path
+        # if os.path.exists(directory_path):
+        #     shutil.rmtree(directory_path, ignore_errors=True)
+        # os.makedirs(directory_path)
 
         self.score = Stat("run", "score", RUN_UPDATE_FREQUENCY, directory_path, header)
         self.step = Stat("run", "step", RUN_UPDATE_FREQUENCY, directory_path, header)
