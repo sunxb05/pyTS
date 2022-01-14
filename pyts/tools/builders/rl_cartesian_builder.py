@@ -60,7 +60,7 @@ class RlCartesianBuilder(DualTrunkBuilder):
             output[0]
         )
         output = Flatten(name="Flatten")(output)
-        output = Dense(10, activation='relu', name="dense")(
+        output = Dense(100, activation='relu', name="dense")(
             output
         )
         return output  # (batch, points, 3)

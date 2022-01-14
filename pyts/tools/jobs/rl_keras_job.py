@@ -1,6 +1,6 @@
 from pathlib import Path
 from typing import Tuple
-
+import random
 from sacred.run import Run
 import tensorflow as tf
 from tensorflow.keras.callbacks import ReduceLROnPlateau, TensorBoard
@@ -14,7 +14,7 @@ from ..ingredients import (
     get_builder,
 )
 from ..loaders import DataLoader
-
+import numpy as np
 
 class KerasJob(Job):
 
@@ -116,8 +116,12 @@ class KerasJob(Job):
         self.exp_config["run_config"]["model_path"] = model_path
         return model_path
 
-    def act(self, fitable, state):
-        q_values = fitable.predict(state)
+    def act(self, memory, fitable, state):
+        exploration_rate = 0.01
+        REPLAY_START_SIZE = 100
+        if np.random.rand() < exploration_rate or len(memory) < REPLAY_START_SIZE:
+            return random.randrange(100)
+        q_values = self.ddqn.predict(state)
         return np.argmax(q_values[0])
 
     def remember(self, memory, state, action, reward, next_state, terminal):

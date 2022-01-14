@@ -42,7 +42,7 @@ class rl(KerasJob):
         total_step_limit = 2
 
         loader, data = self._load_data(loader_config)
-        fitable = fitable or self._load_fitable(loader, fitable_config)
+        fitable = self._load_fitable(loader, fitable_config)
         env = ChemEnv(data)
 
         logger = Logger("rl", root)
@@ -56,8 +56,6 @@ class rl(KerasJob):
                 exit(0)
 
             state = env.reset(ml_number)
-            print ("state")
-            print (state)
             ml_number+= 1
             run_step += 1
             step  = 0
@@ -68,12 +66,9 @@ class rl(KerasJob):
                     exit(0)
                 total_step += 1
                 step += 1
-                action = self.act(fitable, state)
-                print ("action")
-                print(action)
+                action = self.act(memory, fitable, state)
                 state_next, reward, terminal, info = env.step(action)
-                print ("state_next, reward, terminal, info")
-                print (state_next, reward, terminal, info)
+                print ("env.step")
                 score += reward
                 reward = reward if not terminal else -reward
                 state_next = np.reshape(state_next, [1, self.observation_space])

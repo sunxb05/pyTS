@@ -13,7 +13,7 @@ class ChemEnv():
         self.data = data
         # path = self.exp_config["run_config"]["model_path"]
         # print(f"Loading pre-trained model from file {path}")
-        path = "/Users/xiaobo/pyTS/others/run/0104/sacred_storage/1/model.hdf5"
+        path = "/Users/xiaobo/pyTS/others/run/0104/model.hdf5"
         self.model = load_model(path)
 
     def tfn_mae(self, y_pred, y_true):
@@ -55,21 +55,27 @@ class ChemEnv():
 
         closest_frame = nint * coef
 
-        return trj[closest_frame]
+        return trj[int(closest_frame)]
 
 
     def step(self, action):
 
-        z = self.state[0][0]
-        r = self.state[0][1]
-        p = self.state[0][2]
-        t = self.state[0][3]
-        y_true = self.state[1][0]
+        [x, y] =  self.state
+        z = x[0]
+        r = x[1]
+        p = x[2]
+        t = x[3]
+        y_true = y[0]
 
-        action_pair = [[0.1, 0.1], [0.1, 0.2], [0.1, 0.2], [0.1, 0.1], [0.1, 0.2], [0.1, 0.2], [0.1, 0.1], [0.1, 0.2], [0.1, 0.2], [0.1, 0.2]]
+        action_pair = [[0.1, 0.1], [0.1, 0.2], [0.1, 0.3], [0.1, 0.4], [0.1, 0.5], [0.1, 0.6], [0.1, 0.7], [0.1, 0.8], [0.1, 0.9], [0.1, 1.0], [0.2, 0.1], [0.2, 0.2], [0.2, 0.3], [0.2, 0.4], [0.2, 0.5], [0.2, 0.6], [0.2, 0.7], [0.2, 0.8], [0.2, 0.9], [0.2, 1.0], [0.3, 0.1], [0.3, 0.2], [0.3, 0.3], [0.3, 0.4], [0.3, 0.5], [0.3, 0.6], [0.3, 0.7], [0.3, 0.8], [0.3, 0.9], [0.3, 1.0], [0.4, 0.1], [0.4, 0.2], [0.4, 0.3], [0.4, 0.4], [0.4, 0.5], [0.4, 0.6], [0.4, 0.7], [0.4, 0.8], [0.4, 0.9], [0.4, 1.0], [0.5, 0.1], [0.5, 0.2], [0.5, 0.3], [0.5, 0.4], [0.5, 0.5], [0.5, 0.6], [0.5, 0.7], [0.5, 0.8], [0.5, 0.9], [0.5, 1.0], [0.6, 0.1], [0.6, 0.2], [0.6, 0.3], [0.6, 0.4], [0.6, 0.5], [0.6, 0.6], [0.6, 0.7], [0.6, 0.8], [0.6, 0.9], [0.6, 1.0], [0.7, 0.1], [0.7, 0.2], [0.7, 0.3], [0.7, 0.4], [0.7, 0.5], [0.7, 0.6], [0.7, 0.7], [0.7, 0.8], [0.7, 0.9], [0.7, 1.0], [0.8, 0.1], [0.8, 0.2], [0.8, 0.3], [0.8, 0.4], [0.8, 0.5], [0.8, 0.6], [0.8, 0.7], [0.8, 0.8], [0.8, 0.9], [0.8, 1.0], [0.9, 0.1], [0.9, 0.2], [0.9, 0.3], [0.9, 0.4], [0.9, 0.5], [0.9, 0.6], [0.9, 0.7], [0.9, 0.8], [0.9, 0.9], [0.9, 1.0], [1.0, 0.1], [1.0, 0.2], [1.0, 0.3], [1.0, 0.4], [1.0, 0.5], [1.0, 0.6], [1.0, 0.7], [1.0, 0.8], [1.0, 0.9], [1.0, 1.0]]
+
         reactent = self._int_mol(r, t, action_pair[action][0])
         product  = self._int_mol(t, p, action_pair[action][1])
-        ts_predicted = self.model.predict([[z, reactent, product], [y_true]])
+        print ([[z, reactent, product], [y_true]])
+        print ('===========================================')
+        ts_predicted = self.model.predict([[z, np.array(reactent), np.array(product)], [y_true]])
+        print ("ts_predicted")
+        print (ts_predicted)
         reward = self._structure_loss(z, ts_predicted, y_true)
 
         done =  reward < self.ts_threshold
@@ -89,6 +95,5 @@ class ChemEnv():
         p = x[2]
         y_true = y[0]
         ts_predicted = self.model.predict(self.data[0])
-        self.state = [[z[ml_number], r[ml_number], p[ml_number], ts_predicted[ml_number]]], [y_true[ml_number]]
-
+        self.state = [[z[ml_number], r[ml_number], p[ml_number], ts_predicted[ml_number]], [y_true[ml_number]]]
         return self.state
